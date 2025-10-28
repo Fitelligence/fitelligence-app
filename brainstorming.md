@@ -88,5 +88,5 @@ This app would be a simple app that helps vacation goers or people traveling to 
 -**Habit**: Heavy usage during semesters.
 -**Scope**: The scope of this app can be seen as moderate at first but can grow in technical difficulty quickly. The task tracking, scheduling, timers, and push notifications are manageable. Making the app adaptable to users would be quite challenging.
 
-## Final Decision
+# Final Decision
 ## Fitelligence - AI Fitness Tracker
