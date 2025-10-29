@@ -79,7 +79,7 @@ Fitelligence elevates the standard workout log by placing a personal AI trainer 
 
 ## Wireframes
 
-[Add picture of your hand sketched wireframes in this section]
+[![20251028-215534.jpg](https://i.postimg.cc/J7s21qzb/20251028-215534.jpg)](https://postimg.cc/w3dV2DJv)
 
 ### [BONUS] Digital Wireframes & Mockups
 
