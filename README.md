@@ -82,6 +82,11 @@ Fitelligence elevates the standard workout log by placing a personal AI trainer 
 [![20251028-215534.jpg](https://i.postimg.cc/J7s21qzb/20251028-215534.jpg)](https://postimg.cc/w3dV2DJv)
 
 ### [BONUS] Digital Wireframes & Mockups
+<img width="375" height="667" alt="Login" src="https://github.com/user-attachments/assets/52c9a5df-d3e1-4a5d-97ae-4c55140a2263" />
+<img width="375" height="667" alt="Calendar" src="https://github.com/user-attachments/assets/7a7c85b6-1b52-4028-9693-98b33602c3f1" />
+<img width="375" height="667" alt="AI Prompt" src="https://github.com/user-attachments/assets/401ad643-3bf5-49e6-83fd-498ab7c30c47" />
+<img width="375" height="667" alt="Exercises" src="https://github.com/user-attachments/assets/6fe55807-c375-40db-8052-ce05b8f39247" />
+
 
 ### [BONUS] Interactive Prototype
 
