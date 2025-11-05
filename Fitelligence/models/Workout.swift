@@ -16,7 +16,7 @@ import Foundation
 //when saving to the database: workout.user = try? currentUser.toPointer()
 //when querying the database: make sure to add include(["user"]) to query
 
-struct Workout: ParseObject {
+struct Workout: ParseObject, Codable {
     var objectId: String?
     var createdAt: Date?
     var updatedAt: Date?

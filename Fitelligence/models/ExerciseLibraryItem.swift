@@ -28,7 +28,7 @@ enum ExerciseCategory: String, Codable {
     }
 }
 
-struct ExerciseLibraryItem: ParseObject {
+struct ExerciseLibraryItem: ParseObject, Codable {
     var objectId: String?
     var createdAt: Date?
     var updatedAt: Date?
