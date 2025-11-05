@@ -8,7 +8,7 @@
 import ParseSwift
 import Foundation
 
-struct User: ParseUser {
+struct User: ParseUser, Codable {
     var objectId: String?
     var createdAt: Date?
     var updatedAt: Date?
