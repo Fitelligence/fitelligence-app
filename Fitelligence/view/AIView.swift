@@ -1,38 +1,45 @@
-
-//  AIView.swift
-//  Fitelligence
-//
-//  Created by sam will on 11/10/25.
-//
-
-
 import SwiftUI
 
 struct AIView: View {
-    @State private var userPrompt: String = ""
-    @State private var aiResponse: String = ""
-    @State private var isLoading = false
-    @State private var errorMessage: String?
-
-    // MARK: - Replace with your actual Back4App info
-    private let apiURL = URL(string: "https://parseapi.back4app.com/functions/aiFunction")! // Example endpoint
-    private let appId = "YOUR_APP_ID"
-    private let restKey = "YOUR_REST_API_KEY"
+    @StateObject private var viewModel = AIViewModel()
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
+
+                // Title
                 Text("AI Assistant")
                     .font(.largeTitle)
                     .bold()
 
-                TextField("Enter your prompt here...", text: $userPrompt)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(.horizontal)
+                // User Text Input
+                HStack {
+                    TextField("Enter your prompt here...", text: $viewModel.userPrompt)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(maxWidth: 300)
+                }
+                .frame(maxWidth: .infinity)
 
-                Button(action: sendPrompt) {
+                // --- NEW THREE BOXES ---
+                HStack(spacing: 16) {
+
+                    // Blue Calendar Box
+                    featureBox(icon: "calendar", color: .blue)
+
+                    // Purple Sun Box
+                    featureBox(icon: "sun.max.fill", color: .purple)
+
+                    // Orange Weight Box (dumbbell)
+                    featureBox(icon: "dumbbell.fill", color: .orange)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal)
+                // --- END NEW BOXES ---
+
+                // Ask AI Button
+                Button(action: viewModel.sendPrompt) {
                     HStack {
-                        if isLoading {
+                        if viewModel.isLoading {
                             ProgressView()
                         }
                         Text("Ask AI")
@@ -45,18 +52,19 @@ struct AIView: View {
                     .cornerRadius(12)
                     .padding(.horizontal)
                 }
-                .disabled(userPrompt.isEmpty || isLoading)
+                .disabled(viewModel.userPrompt.isEmpty || viewModel.isLoading)
 
+                // Display AI Response
                 ScrollView {
-                    if let error = errorMessage {
+                    if let error = viewModel.errorMessage {
                         Text("⚠️ \(error)")
                             .foregroundColor(.red)
                             .padding()
-                    } else if !aiResponse.isEmpty {
+                    } else if !viewModel.aiResponse.isEmpty {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("AI Response:")
                                 .font(.headline)
-                            Text(aiResponse)
+                            Text(viewModel.aiResponse)
                                 .padding()
                                 .background(Color(.systemGray6))
                                 .cornerRadius(10)
@@ -68,6 +76,7 @@ struct AIView: View {
                             .padding()
                     }
                 }
+
                 Spacer()
             }
             .padding(.top)
@@ -75,58 +84,17 @@ struct AIView: View {
         }
     }
 
-    // MARK: - Networking Function
-    func sendPrompt() {
-        guard !userPrompt.isEmpty else { return }
-        isLoading = true
-        aiResponse = ""
-        errorMessage = nil
+    // MARK: - Feature Box Component
+    func featureBox(icon: String, color: Color) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(color)
+                .frame(height: 80)
 
-        var request = URLRequest(url: apiURL)
-        request.httpMethod = "POST"
-        request.addValue(appId, forHTTPHeaderField: "X-Parse-Application-Id")
-        request.addValue(restKey, forHTTPHeaderField: "X-Parse-REST-API-Key")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let body: [String: Any] = ["prompt": userPrompt]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            DispatchQueue.main.async {
-                isLoading = false
-            }
-
-            if let error = error {
-                DispatchQueue.main.async {
-                    errorMessage = "Network error: \(error.localizedDescription)"
-                }
-                return
-            }
-
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    errorMessage = "No response data received."
-                }
-                return
-            }
-
-            do {
-                if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let result = json["result"] as? String {
-                    DispatchQueue.main.async {
-                        aiResponse = result
-                    }
-                } else {
-                    DispatchQueue.main.async {
-                        errorMessage = "Invalid response format."
-                    }
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    errorMessage = "JSON parsing error: \(error.localizedDescription)"
-                }
-            }
-        }.resume()
+            Image(systemName: icon)
+                .font(.system(size: 28))
+                .foregroundColor(.white)
+        }
     }
 }
 
