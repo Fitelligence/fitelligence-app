@@ -44,9 +44,9 @@ Fitelligence elevates the standard workout log by placing a personal AI trainer 
 
 ### 2. Screen Archetypes
 
-- [ ] [**Login Screen**]
+- [x] [**Login Screen**]
 * User can login.
-- [ ] [**Registration Screen**]
+- [x] [**Registration Screen**]
 * User can register for an account using an email and a password.
 - [ ] [**AI Screen**]
 * User can type in a simple request to the AI and the AI will generate a complete workout plan that fits the user's needs and constraints.
@@ -73,9 +73,9 @@ Fitelligence elevates the standard workout log by placing a personal AI trainer 
 
 **Flow Navigation** (Screen to Screen)
 
-- [ ] **Login Screen**
+- [x] **Login Screen**
   * Leads to **Previous Workouts Screen**
-- [ ] **Registration Screen**
+- [x] **Registration Screen**
   * Leads to **Previous Workouts Screen**
 
 
