@@ -53,9 +53,9 @@ Fitelligence elevates the standard workout log by placing a personal AI trainer 
 * The user can then import the given exercises to their workout log.
 * (optional) User can have a "conversation" with the AI, meaning it can continue talking to the AI to tweak the plan until desired.
 - [ ] [**Previous Workouts Screen**]
-* User can view their exercises so that they can see their progress. 
-* User can modify and update previous exercises. 
-* (optional) User can view their previous workouts in a nice calendar view for easier tracking.
+      * [ ] User can view their exercises so that they can see their progress. 
+      * [ ] User can modify and update previous exercises. 
+      * [x] (optional) User can view their previous workouts in a nice calendar view for easier tracking.
 - [ ] [**Current Workout Screen**]
 * User can track an individual exercise by the category (abs, chest, legs, etc.), weight, reps, and set. 
 - [ ] [**Add Custom Workout Form/Screen**]
