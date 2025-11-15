@@ -59,7 +59,9 @@ Fitelligence elevates the standard workout log by placing a personal AI trainer 
 - [ ] [**Current Workout Screen**]
 * User can track an individual exercise by the category (abs, chest, legs, etc.), weight, reps, and set. 
 - [ ] [**Add Custom Workout Form/Screen**]
-* User can add new custom exercises if a desired exercise is not already an option. 
+* User can add new custom exercises if a desired exercise is not already an option.
+- [x] [**Add Workout Schedule Screen**]
+* User can view scheduled workouts on a calendar screen and list. 
 ### 3. Navigation
 
 **Tab Navigation** (Tab to Screen)
