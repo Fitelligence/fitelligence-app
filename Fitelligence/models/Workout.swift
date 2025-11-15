@@ -20,6 +20,7 @@ struct Workout: ParseObject, Codable {
     var objectId: String?
     var createdAt: Date?
     var updatedAt: Date?
+    var scheduleDate: Date?
     var ACL: ParseACL?
     var originalData: Data?
     
