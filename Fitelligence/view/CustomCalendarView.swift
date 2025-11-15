@@ -131,10 +131,40 @@ struct CustomCalendarView: View {
                 }
             }
             .padding()
-            HStack(spacing: 30) {
-                TabButton(icon: "calendar", color: .blue)
-                TabButton(icon: "sun.max.fill", color: .purple)
-                TabButton(icon: "dumbbell.fill", color: .orange)
+            HStack(spacing: 20) {
+                ZStack{
+                    Circle()
+                        .cornerRadius(20)
+                        .frame(width: 75)
+                        .foregroundColor(.blue)
+                    Image(systemName : "calendar")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 32, height: 32)
+                        .foregroundColor(.white)
+                }
+                ZStack{
+                    Circle()
+                        .cornerRadius(20)
+                        .frame(width: 75)
+                        .foregroundColor(.purple)
+                    Image(systemName: "sun.max.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 32, height: 32)
+                        .foregroundColor(.white)
+                }
+                ZStack{
+                    Circle()
+                        .cornerRadius(20)
+                        .frame(width: 75)
+                        .foregroundColor(.orange)
+                    Image(systemName : "dumbbell.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 32, height: 32)
+                        .foregroundColor(.white)
+                }
             }
             .padding(.top)
         }
