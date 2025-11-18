@@ -13,28 +13,17 @@ struct AIView: View {
                     .bold()
 
                 // User Text Input
-                HStack {
-                    TextField("Enter your prompt here...", text: $viewModel.userPrompt)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .frame(maxWidth: 300)
-                }
-                .frame(maxWidth: .infinity)
+                TextField("Enter your prompt here...", text: $viewModel.userPrompt)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding(.horizontal)
 
                 // --- NEW THREE BOXES ---
                 HStack(spacing: 16) {
-
-                    // Blue Calendar Box
                     featureBox(icon: "calendar", color: .blue)
-
-                    // Purple Sun Box
                     featureBox(icon: "sun.max.fill", color: .purple)
-
-                    // Orange Weight Box (dumbbell)
                     featureBox(icon: "dumbbell.fill", color: .orange)
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.horizontal)
-                // --- END NEW BOXES ---
 
                 // Ask AI Button
                 Button(action: viewModel.sendPrompt) {
@@ -57,6 +46,7 @@ struct AIView: View {
                 // Display AI Response
                 ScrollView {
                     if let error = viewModel.errorMessage {
+                        // <-- fixed string interpolation with emoji
                         Text("⚠️ \(error)")
                             .foregroundColor(.red)
                             .padding()
