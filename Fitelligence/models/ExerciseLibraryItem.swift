@@ -28,7 +28,7 @@ enum ExerciseCategory: String, Codable {
     }
 }
 
-struct ExerciseLibraryItem: ParseObject, Codable {
+struct ExerciseLibraryItem: ParseObject, Codable, Hashable {
     var objectId: String?
     var createdAt: Date?
     var updatedAt: Date?
@@ -37,4 +37,13 @@ struct ExerciseLibraryItem: ParseObject, Codable {
     
     var name: String?
     var category: ExerciseCategory?
+    
+    // Hashable/Equatable based on objectId for dictionary key stability
+    static func == (lhs: ExerciseLibraryItem, rhs: ExerciseLibraryItem) -> Bool {
+        lhs.objectId == rhs.objectId
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(objectId)
+    }
 }
