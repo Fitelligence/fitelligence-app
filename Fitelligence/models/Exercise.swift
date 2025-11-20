@@ -11,8 +11,9 @@ import Foundation
 //Exercise
 //This model represents individual exercises of a workout. Exercises are linked to workouts via pointer, and the ExerciseLibraryItem pointer can be used to retrieve exercise details, such as name and category, as needed. 
 
-struct Set: Codable, Equatable {
-    var set: Int
+struct Set: Codable, Equatable, Identifiable {
+    var id = UUID()
+    var setNumber: Int
     var weight: Double
     var reps: Int
 }
