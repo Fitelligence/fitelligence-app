@@ -10,6 +10,9 @@ import ParseSwift
 
 @main
 struct FitelligenceApp: App {
+    
+    @StateObject private var authViewModel = AuthenticationViewModel()
+    
     init() {
         ParseSwift.initialize(
             applicationId: "1g9mCtQTndUdapOL2URSjzBarbEVJpBxXI09peRa",
@@ -20,7 +23,13 @@ struct FitelligenceApp: App {
     
     var body: some Scene {
         WindowGroup {
-            LoginView()
+            if authViewModel.isAuthenticated {
+                CustomCalendarView()
+                    .environmentObject(authViewModel)
+            } else {
+                LoginView()
+                    .environmentObject(authViewModel)
+            }
         }
     }
 }
