@@ -10,9 +10,12 @@ import SwiftUI
 struct CustomCalendarView: View {
     
     
-    
     @State private var selectedDate = Date()
     @State private var currentMonthOffset = 0
+    
+    @State private var workoutVM = WorkoutViewModel()
+
+    
     private let calendar = Calendar.current
     
     
@@ -106,7 +109,12 @@ struct CustomCalendarView: View {
                         )
                         .clipShape(Circle())
                         .contentShape(Rectangle()) // ensures full tap area
-                        .onTapGesture { selectedDate = date }
+                        .onTapGesture {
+                            selectedDate = date
+                            Task {
+                                await workoutVM.loadWorkouts(for: date)
+                            }
+                        }
                 }
             }
             .padding(.horizontal)
@@ -114,23 +122,30 @@ struct CustomCalendarView: View {
             Divider().padding(.horizontal)
             
             //lists workouts
-            ScrollView(){
-                LazyVStack(){
-                    ForEach(1...10, id: \.self) { item in
+            ScrollView {
+                LazyVStack {
+                    ForEach(workoutVM.workoutsForSelectedDate, id: \.objectId) { workout in
                         HStack {
-                            
                             Circle()
-                                .fill(Color.orange)
+                                .fill(.orange)
                                 .frame(width: 8, height: 8)
-                            Text("Excercise \(item)")
-                                .font(.system(size:30))
+                            
+                            Text(workout.name ?? "Unnamed Workout")
+                                .font(.system(size: 24, weight: .medium))
+                            
+                            Spacer()
+                            
+                            if workout.isCompleted == true {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                            }
                         }
                         .padding(.horizontal)
+                        
                         Divider()
                     }
                 }
-            }
-            .padding()
+            }.padding()
             HStack(spacing: 20) {
                 ZStack{
                     Circle()

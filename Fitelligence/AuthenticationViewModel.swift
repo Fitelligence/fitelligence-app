@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 class AuthenticationViewModel: ObservableObject {
     @Published var email = ""
@@ -17,6 +18,9 @@ class AuthenticationViewModel: ObservableObject {
     
     @Published var showSuccess = false
     @Published var successMessage = ""
+    
+    @Published var isAuthenticated = false
+
     
     // MARK: - Validation
     private func isValidEmail(_ email: String) -> Bool {
@@ -58,11 +62,13 @@ class AuthenticationViewModel: ObservableObject {
         // Simulate API call
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             // Replace this with actual authentication
-            self.showSuccessAlert("Login successful!")
+            //self.showSuccessAlert("Login successful!")
             
             // TODO: Navigate to main app
             // You would typically use a @StateObject or @EnvironmentObject
             // to manage authentication state across the app
+            self.isAuthenticated = true
+
         }
     }
     

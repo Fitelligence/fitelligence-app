@@ -15,6 +15,11 @@ class WorkoutViewModel {
     var exercises: [ExerciseLibraryItem] = []
     var trackedExercises: [ExerciseLibraryItem: [Set]] = [:]
     
+    //edit by robert
+    var workoutsForSelectedDate: [Workout] = []
+    private let calendar = Calendar.current
+    //end edit
+    
     private let service = WorkoutService()
     
     func addTrackedExercise(_ exercise: ExerciseLibraryItem) {
@@ -98,6 +103,27 @@ class WorkoutViewModel {
         return exercises.filter { $0.category?.name == category }
     }
     
+    //edit by robert
+    func loadWorkouts(for date: Date) async {
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        do {
+            // Query for workouts scheduled on that day
+            var query = Workout.query("scheduleDate" >= startOfDay)
+                .where("scheduleDate" < endOfDay)
+                .include(["user"]) // optional, includes pointer to user
+            
+            let results = try await query.findAll()
+            workoutsForSelectedDate = results
+        } catch {
+            print("Failed to load workouts:", error.localizedDescription)
+            workoutsForSelectedDate = []
+        }
+    }
+    
+    //end edit
+
 }
 
 class WorkoutService {

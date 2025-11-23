@@ -14,6 +14,8 @@ struct CreateWorkoutView: View {
     @State private var isExercisePickerShowing: Bool = false
     @State private var viewModel = WorkoutViewModel()
     
+    
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading) {
