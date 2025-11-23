@@ -14,7 +14,11 @@ struct CreateWorkoutView: View {
     @State private var isExercisePickerShowing: Bool = false
     @State private var viewModel = WorkoutViewModel()
     
+    @State private var showError = false
+    @State private var errorMessage = ""
     
+    @Environment(\.dismiss) var dismiss
+
     
     var body: some View {
         ScrollView {
@@ -49,7 +53,10 @@ struct CreateWorkoutView: View {
                 }
                 
                 Button(action: {
-                    isExercisePickerShowing = true
+                    Task(priority: .background) {
+                        await viewModel.loadExercises()
+                        isExercisePickerShowing = true
+                    }
                 }) {
                     HStack {
                         Image(systemName: "plus.circle.fill")
@@ -69,9 +76,17 @@ struct CreateWorkoutView: View {
                 if viewModel.trackedExercises.count > 0 {
                     Button(action: {
                         Task {
+                            guard !workoutName.trimmingCharacters(in: .whitespaces).isEmpty else {
+                                        errorMessage = "Workout name cannot be empty."
+                                        showError = true
+                                        return
+                                    }
                             try? await viewModel.saveWorkout(name: workoutName, date: date)
                             workoutName = ""
                             date = Date()
+                            await MainActor.run {
+                                dismiss()
+                            }
                         }
                     }) {
                         Text("Save workout")
@@ -79,6 +94,11 @@ struct CreateWorkoutView: View {
                     .buttonStyle(.borderedProminent)
                     .padding()
                     .frame(maxWidth: .infinity)
+                    .alert("Error", isPresented: $showError, actions: {
+                        Button("OK", role: .cancel) {}
+                    }, message: {
+                        Text(errorMessage)
+                    })
                 }
                 
                 
@@ -92,7 +112,7 @@ struct CreateWorkoutView: View {
                 })
         }
         .onAppear {
-            Task {
+            Task(priority: .background) {
                 await viewModel.loadExercises()
             }
         }

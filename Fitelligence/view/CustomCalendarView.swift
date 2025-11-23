@@ -40,148 +40,163 @@ struct CustomCalendarView: View {
     
     
     var body: some View {
-        VStack(spacing: 16) {
-            //user profile/name WIP
-            HStack{
-                Text("Hello user!").font(.title).bold()
-                    .frame(alignment: .leading)
-                    .padding()
-                Spacer()
-            }
-            
-            // Month Header
-            HStack {
-                Button(action: { withAnimation { currentMonthOffset -= 1 } }) {
-                    Image(systemName: "chevron.left")
-                }
-                
-                Spacer()
-                
-                Text(currentMonth, format: Date.FormatStyle().month(.wide).year())
-                    .font(.title2).bold()
-                
-                Spacer()
-                
-                Button(action: { withAnimation { currentMonthOffset += 1 } }) {
-                    Image(systemName: "chevron.right")
-                }
-            }
-            .padding(.horizontal)
-            .foregroundColor(.primary)
-            
-            // Weekday Labels
-            let weekdays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
-            let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
-            
-            
-            //calendar maker
-            LazyVGrid(columns: columns, spacing: 8) {
-                // Weekday labels
-                ForEach(weekdays, id: \.self) { day in
-                    Text(day)
-                        .font(.caption)
-                        .frame(maxWidth: .infinity, minHeight: 20)
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.center)
-                }
-                
-                // Empty slots before first day
-                ForEach(0..<startingWeekdayOffset, id: \.self) { _ in
-                    Text("")
-                        .frame(height: 36)
-                }
-                
-                // Days in month
-                ForEach(daysInMonth, id: \.self) { date in
-                    let isPast = date < calendar.startOfDay(for: Date())
-                    let isToday = calendar.isDateInToday(date)
-                    let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+        NavigationStack{
+            VStack(spacing: 16) {
+                //user profile/name WIP
+                HStack{
+                    Text("Hello user!").font(.title).bold()
+                        .frame(alignment: .leading)
+                        .padding()
+                    Spacer()
                     
-                    Text("\(calendar.component(.day, from: date))")
-                        .frame(maxWidth: .infinity, minHeight: 36)
-                        .foregroundColor(
-                            isSelected ? .white :
-                                (isPast ? .gray : .primary)
-                        )//colors number based on date
-                        .background(
-                            isSelected ? Color.orange :
-                                (isToday ? Color.orange.opacity(0.3) : Color.clear)
-                        )
-                        .clipShape(Circle())
-                        .contentShape(Rectangle()) // ensures full tap area
-                        .onTapGesture {
-                            selectedDate = date
-                            Task {
-                                await workoutVM.loadWorkouts(for: date)
-                            }
-                        }
+                    NavigationLink(destination: CreateWorkoutView()) {
+                        Image(systemName: "plus.circle")
+                            .padding(.trailing)
+                    }
+
                 }
-            }
-            .padding(.horizontal)
-            
-            Divider().padding(.horizontal)
-            
-            //lists workouts
-            ScrollView {
-                LazyVStack {
-                    ForEach(workoutVM.workoutsForSelectedDate, id: \.objectId) { workout in
-                        HStack {
-                            Circle()
-                                .fill(.orange)
-                                .frame(width: 8, height: 8)
-                            
-                            Text(workout.name ?? "Unnamed Workout")
-                                .font(.system(size: 24, weight: .medium))
-                            
-                            Spacer()
-                            
-                            if workout.isCompleted == true {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.green)
-                            }
-                        }
-                        .padding(.horizontal)
-                        
-                        Divider()
+                
+                // Month Header
+                HStack {
+                    Button(action: { withAnimation { currentMonthOffset -= 1 } }) {
+                        Image(systemName: "chevron.left")
+                    }
+                    
+                    Spacer()
+                    
+                    Text(currentMonth, format: Date.FormatStyle().month(.wide).year())
+                        .font(.title2).bold()
+                    
+                    Spacer()
+                    
+                    Button(action: { withAnimation { currentMonthOffset += 1 } }) {
+                        Image(systemName: "chevron.right")
                     }
                 }
-            }.padding()
-            HStack(spacing: 20) {
-                ZStack{
-                    Circle()
-                        .cornerRadius(20)
-                        .frame(width: 75)
-                        .foregroundColor(.blue)
-                    Image(systemName : "calendar")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 32, height: 32)
-                        .foregroundColor(.white)
+                .padding(.horizontal)
+                .foregroundColor(.primary)
+                
+                // Weekday Labels
+                let weekdays = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+                let columns = Array(repeating: GridItem(.flexible(), spacing: 0), count: 7)
+                
+                
+                //calendar maker
+                LazyVGrid(columns: columns, spacing: 8) {
+                    // Weekday labels
+                    ForEach(weekdays, id: \.self) { day in
+                        Text(day)
+                            .font(.caption)
+                            .frame(maxWidth: .infinity, minHeight: 20)
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                    }
+                    
+                    // Empty slots before first day
+                    ForEach(0..<startingWeekdayOffset, id: \.self) { _ in
+                        Text("")
+                            .frame(height: 36)
+                    }
+                    
+                    // Days in month
+                    ForEach(daysInMonth, id: \.self) { date in
+                        let isPast = date < calendar.startOfDay(for: Date())
+                        let isToday = calendar.isDateInToday(date)
+                        let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
+                        
+                        Text("\(calendar.component(.day, from: date))")
+                            .frame(maxWidth: .infinity, minHeight: 36)
+                            .foregroundColor(
+                                isSelected ? .white :
+                                    (isPast ? .gray : .primary)
+                            )//colors number based on date
+                            .background(
+                                isSelected ? Color.orange :
+                                    (isToday ? Color.orange.opacity(0.3) : Color.clear)
+                            )
+                            .clipShape(Circle())
+                            .contentShape(Rectangle()) // ensures full tap area
+                            .onTapGesture {
+                                workoutVM.loadWorkouts(for: date)
+                            }
+                    }
                 }
-                ZStack{
-                    Circle()
-                        .cornerRadius(20)
-                        .frame(width: 75)
-                        .foregroundColor(.purple)
-                    Image(systemName: "sun.max.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 32, height: 32)
-                        .foregroundColor(.white)
+                .padding(.horizontal)
+                
+                Divider().padding(.horizontal)
+                
+                //lists workouts
+                ScrollView {
+                    LazyVStack {
+                        if workoutVM.workoutsForSelectedDate.isEmpty {
+                            VStack {
+                                Spacer()
+                                Text("No workouts scheduled today")
+                                    .font(.headline)
+                                    .foregroundColor(.gray)
+                                Spacer()
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 200)
+                            .padding()
+                        } else {
+                            ForEach(workoutVM.workoutsForSelectedDate, id: \.objectId) { workout in
+                                HStack {
+                                    Circle().fill(.orange).frame(width: 8, height: 8)
+                                    Text(workout.name ?? "Unnamed Workout")
+                                        .font(.system(size: 24, weight: .medium))
+                                    Spacer()
+                                    if workout.isCompleted == true {
+                                        Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+                                    }
+                                }
+                                .padding(.horizontal)
+                                Divider()
+                            }
+                        }
+                    }
+                    .padding()
+                }.refreshable {
+                     workoutVM.loadWorkouts(for: selectedDate)
                 }
-                ZStack{
-                    Circle()
-                        .cornerRadius(20)
-                        .frame(width: 75)
-                        .foregroundColor(.orange)
-                    Image(systemName : "dumbbell.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 32, height: 32)
-                        .foregroundColor(.white)
+
+                
+                HStack(spacing: 20) {
+                    ZStack{
+                        Circle()
+                            .cornerRadius(20)
+                            .frame(width: 75)
+                            .foregroundColor(.blue)
+                        Image(systemName : "calendar")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 32, height: 32)
+                            .foregroundColor(.white)
+                    }
+                    ZStack{
+                        Circle()
+                            .cornerRadius(20)
+                            .frame(width: 75)
+                            .foregroundColor(.purple)
+                        Image(systemName: "sun.max.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 32, height: 32)
+                            .foregroundColor(.white)
+                    }
+                    ZStack{
+                        Circle()
+                            .cornerRadius(20)
+                            .frame(width: 75)
+                            .foregroundColor(.orange)
+                        Image(systemName : "dumbbell.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 32, height: 32)
+                            .foregroundColor(.white)
+                    }
                 }
+                .padding(.top)
             }
-            .padding(.top)
         }
     }
 }
