@@ -104,23 +104,35 @@ class WorkoutViewModel {
     }
     
     //edit by robert
-    func loadWorkouts(for date: Date) async {
-        let startOfDay = calendar.startOfDay(for: date)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-        
-        do {
-            // Query for workouts scheduled on that day
-            var query = Workout.query("scheduleDate" >= startOfDay)
-                .where("scheduleDate" < endOfDay)
-                .include(["user"]) // optional, includes pointer to user
-            
-            let results = try await query.findAll()
-            workoutsForSelectedDate = results
-        } catch {
-            print("Failed to load workouts:", error.localizedDescription)
-            workoutsForSelectedDate = []
+    func loadWorkouts(for date: Date) {
+        // Offload to background priority
+        Task(priority: .background) {
+            let startOfDay = calendar.startOfDay(for: date)
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+            do {
+                // Build query
+                var query = Workout.query("scheduleDate" >= startOfDay)
+                    .where("scheduleDate" < endOfDay)
+                    .include(["user"])
+
+                // Perform query on background thread
+                let results = try await query.find()  // <-- heavy work
+
+                // Update UI on main thread
+                await MainActor.run {
+                    self.workoutsForSelectedDate = results
+                }
+            } catch {
+                // Handle errors on main thread
+                await MainActor.run {
+                    self.workoutsForSelectedDate = []
+                    print("Failed to load workouts:", error.localizedDescription)
+                }
+            }
         }
     }
+
     
     //end edit
 
