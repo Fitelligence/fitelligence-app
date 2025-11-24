@@ -131,3 +131,14 @@ Exercise Log
 
 
 
+### Current Version Video
+
+<div>
+    <a href="https://www.loom.com/share/d67634bdbc084c8c953992d4b69aabe0">
+      <p>Loom | Free Screen & Video Recording Software | Loom - 24 November 2025 - Watch Video</p>
+    </a>
+    <a href="https://www.loom.com/share/d67634bdbc084c8c953992d4b69aabe0">
+      <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/d67634bdbc084c8c953992d4b69aabe0-66d472a9390ced46-full-play.gif#t=0.1">
+    </a>
+  </div>
+
