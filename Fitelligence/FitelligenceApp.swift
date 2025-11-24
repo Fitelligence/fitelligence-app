@@ -2,7 +2,7 @@
 //  FitelligenceApp.swift
 //  Fitelligence
 //
-//  Created by Michael Steelman on 11/3/25.
+//  Created by Michael Steelman + Jake C on 11/3/25.
 //
 
 import SwiftUI
@@ -24,7 +24,7 @@ struct FitelligenceApp: App {
     var body: some Scene {
         WindowGroup {
             if authViewModel.isAuthenticated {
-                CustomCalendarView()
+                MainTabView()  // ← Changed this line
                     .environmentObject(authViewModel)
             } else {
                 LoginView()
