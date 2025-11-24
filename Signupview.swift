@@ -133,6 +133,7 @@ struct SignUpView: View {
             .alert("Success", isPresented: $viewModel.showSuccess) {
                 Button("OK", role: .cancel) {
                     if viewModel.successMessage.contains("successfully") {
+                        confirmPassword = ""
                         dismiss()
                     }
                 }
@@ -146,6 +147,7 @@ struct SignUpView: View {
 #Preview {
     SignUpView()
 }
+
 
 
 
