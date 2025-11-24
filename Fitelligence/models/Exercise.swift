@@ -16,6 +16,11 @@ struct Set: Codable, Equatable, Identifiable {
     var setNumber: Int
     var weight: Double
     var reps: Int
+    //edit by robert
+    enum CodingKeys: String, CodingKey {
+            case setNumber, weight, reps
+        }
+    //end edit
 }
 
 struct Exercise: ParseObject {

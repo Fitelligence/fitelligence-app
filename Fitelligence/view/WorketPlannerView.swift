@@ -24,10 +24,7 @@ struct WorkoutPlannerMainView: View {
                             .padding(.top)
                         
                         // Calendar
-                        CustomCalendarView(
-                            selectedDate: $selectedDate,
-                            workoutDates: viewModel.workouts.compactMap { $0.scheduleDate }
-                        )
+                        CustomCalendarView()
                         .padding(.horizontal)
                         
                         // Workouts for selected date

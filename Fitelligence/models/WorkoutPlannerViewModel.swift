@@ -76,7 +76,7 @@ class WorkoutPlannerViewModel {
             errorMessage = nil
         }
         
-        var workoutToDelete = workout
+        let workoutToDelete = workout
         
         do {
             try await workoutToDelete.delete()

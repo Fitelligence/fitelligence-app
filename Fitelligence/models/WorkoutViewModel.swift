@@ -104,6 +104,14 @@ class WorkoutViewModel {
     }
     
     //edit by robert
+    
+    func refresh(for date: Date) {
+        Task {
+            await loadWorkouts(for: date)
+        }
+    }
+    
+    
     func loadWorkouts(for date: Date) {
         // Offload to background priority
         Task(priority: .background) {
@@ -112,7 +120,7 @@ class WorkoutViewModel {
 
             do {
                 // Build query
-                var query = Workout.query("scheduleDate" >= startOfDay)
+                let query = Workout.query("scheduleDate" >= startOfDay)
                     .where("scheduleDate" < endOfDay)
                     .include(["user"])
 

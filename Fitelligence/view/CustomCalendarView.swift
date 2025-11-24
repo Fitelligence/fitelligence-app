@@ -112,32 +112,13 @@ struct CustomCalendarView: View {
                         let isToday = calendar.isDateInToday(date)
                         let isSelected = calendar.isDate(date, inSameDayAs: selectedDate)
                         
-                        VStack(spacing: 2) {
-                            Text("\(calendar.component(.day, from: date))")
-                                .frame(maxWidth: .infinity, minHeight: 36)
-                                .foregroundColor(
-                                    isSelected ? .white :
-                                        (isPast ? .gray : .primary)
-                                ) // Colors number based on date
-                                .background(
-                                    isSelected ? Color.orange :
-                                        (isToday ? Color.orange.opacity(0.3) : Color.clear)
-                                )
-                                .clipShape(Circle())
-                            
-                            // Workout indicator dot (blue dot if workout exists)
-                            if hasWorkout(on: date) {
-                                Circle()
-                                    .fill(Color.blue)
-                                    .frame(width: 4, height: 4)
-                            } else {
-                                Circle()
-                                    .fill(Color.clear)
-                                    .frame(width: 4, height: 4)
-                            }
-                        }
-                        .contentShape(Rectangle()) // Ensures full tap area
-                        .onTapGesture {
+                        DayCell(
+                            date: date,
+                            isSelected: isSelected,
+                            isToday: isToday,
+                            hasWorkout: hasWorkout(on: date),
+                            isPast: isPast
+                        ) {
                             selectedDate = date
                             workoutVM.loadWorkouts(for: date)
                         }
@@ -151,29 +132,36 @@ struct CustomCalendarView: View {
                 ScrollView {
                     LazyVStack {
                         if workoutVM.workoutsForSelectedDate.isEmpty {
-                            VStack {
-                                Spacer()
-                                Text("No workouts scheduled today")
+                            VStack(spacing: 12) {
+                                Image(systemName: "calendar.badge.plus")
+                                    .font(.system(size: 50))
+                                    .foregroundColor(.gray.opacity(0.5))
+                                Text("No workouts scheduled")
                                     .font(.headline)
                                     .foregroundColor(.gray)
-                                Spacer()
+                                Text("Tap + to create a workout")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray.opacity(0.7))
                             }
-                            .frame(maxWidth: .infinity, minHeight: 200)
-                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 40)
                         } else {
                             ForEach(workoutVM.workoutsForSelectedDate, id: \.objectId) { workout in
-                                HStack {
-                                    Circle().fill(.orange).frame(width: 8, height: 8)
-                                    Text(workout.name ?? "Unnamed Workout")
-                                        .font(.system(size: 24, weight: .medium))
-                                    Spacer()
-                                    if workout.isCompleted == true {
-                                        Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+                                NavigationLink(destination: workoutDetail(for: workout)){
+                                    HStack {
+                                        Circle().fill(.blue).frame(width: 8, height: 8)
+                                        Text(workout.name ?? "Unnamed Workout")
+                                            .font(.system(size: 24, weight: .medium))
+                                        Spacer()
+                                        if workout.isCompleted == true {
+                                            Image(systemName: "checkmark.circle.fill").foregroundColor(.green)
+                                        }
                                     }
+                                    .padding(.horizontal)
                                 }
-                                .padding(.horizontal)
                                 Divider()
                             }
+                            
                         }
                     }
                     .padding()
@@ -181,47 +169,54 @@ struct CustomCalendarView: View {
                 .refreshable {
                     workoutVM.loadWorkouts(for: selectedDate)
                 }
-                
-                HStack(spacing: 20) {
-                    ZStack {
-                        Circle()
-                            .cornerRadius(20)
-                            .frame(width: 75)
-                            .foregroundColor(.blue)
-                        Image(systemName: "calendar")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 32, height: 32)
-                            .foregroundColor(.white)
-                    }
-                    ZStack {
-                        Circle()
-                            .cornerRadius(20)
-                            .frame(width: 75)
-                            .foregroundColor(.purple)
-                        Image(systemName: "sun.max.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 32, height: 32)
-                            .foregroundColor(.white)
-                    }
-                    ZStack {
-                        Circle()
-                            .cornerRadius(20)
-                            .frame(width: 75)
-                            .foregroundColor(.orange)
-                        Image(systemName: "dumbbell.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 32, height: 32)
-                            .foregroundColor(.white)
-                    }
-                }
                 .padding(.top)
             }
+            .onAppear {
+                    workoutVM.loadWorkouts(for: selectedDate)
+                }
         }
     }
+    
+    private func workoutDetail(for workout: Workout) -> some View {
+        WorkoutDetailView(
+            workout: workout,
+            workoutVM: workoutVM,
+            selectedDate: selectedDate
+        )
+    }
 }
+struct DayCell: View {
+    let date: Date
+    let isSelected: Bool
+    let isToday: Bool
+    let hasWorkout: Bool
+    let isPast: Bool
+    let onTap: () -> Void
+
+    private let calendar = Calendar.current
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text("\(calendar.component(.day, from: date))")
+                .frame(maxWidth: .infinity, minHeight: 36)
+                .foregroundColor(
+                    isSelected ? .white : (isPast ? .gray : .primary)
+                )
+                .background(
+                    isSelected ? Color.blue :
+                        (isToday ? Color.blue.opacity(0.3) : Color.clear)
+                )
+                .clipShape(Circle())
+
+            Circle()
+                .fill(hasWorkout ? Color.blue : Color.clear)
+                .frame(width: 4, height: 4)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { onTap() }
+    }
+}
+
 
 #Preview {
     CustomCalendarView()
