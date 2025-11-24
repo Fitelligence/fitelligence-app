@@ -12,8 +12,8 @@ struct MainTabView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            // Calendar/Workout Planner Tab
-            WorkoutPlannerMainView()
+            // Calendar/Workout Planner Tab - Using Robert's view
+            CustomCalendarView()
                 .tabItem {
                     Image(systemName: "calendar")
                         .font(.system(size: 24))
@@ -39,8 +39,6 @@ struct MainTabView: View {
         .accentColor(.blue) // Selected tab color
     }
 }
-
-// WorkoutPlannerView is now in its own file
 
 // AI Assistant View
 struct AIAssistantView: View {
