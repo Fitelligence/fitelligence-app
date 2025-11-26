@@ -93,6 +93,11 @@ struct AIView: View {
                         .cornerRadius(12)
                         .lineLimit(1...4)
                         .disabled(viewModel.isLoading)
+                        .onSubmit {
+                            Task {
+                                await viewModel.sendPrompt()
+                            }
+                        }
                     
                     // Send Button
                     Button(action: {
