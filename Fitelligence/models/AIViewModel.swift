@@ -24,6 +24,12 @@ class AIViewModel {
             return
         }
         
+        // Check if API key is configured
+        if restKey == "YOUR_REST_API_KEY" {
+            errorMessage = "❌ REST API Key not configured. Add it in AIViewModel.swift"
+            return
+        }
+        
         // Reset state
         isLoading = true
         errorMessage = nil
@@ -41,6 +47,9 @@ class AIViewModel {
         // Create request body
         let body: [String: String] = ["prompt": prompt]
         
+        print("🚀 Sending request to: \(endpoint)")
+        print("📦 Body: \(body)")
+        
         do {
             // Encode body to JSON
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -50,32 +59,85 @@ class AIViewModel {
             
             // Check HTTP response
             guard let httpResponse = response as? HTTPURLResponse else {
-                errorMessage = "Invalid response from server"
+                errorMessage = "❌ Invalid response from server"
                 isLoading = false
                 return
             }
             
+            print("📡 Response status: \(httpResponse.statusCode)")
+            
+            // Try to parse error from server
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                print("📄 Response JSON: \(json)")
+            }
+            
             guard (200...299).contains(httpResponse.statusCode) else {
-                errorMessage = "Server error: \(httpResponse.statusCode)"
+                // Try to get detailed error message
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let errorDetail = json["error"] as? String {
+                    errorMessage = "❌ Server error: \(errorDetail)"
+                } else if httpResponse.statusCode == 400 {
+                    errorMessage = "❌ Bad Request (400): Cloud function 'aiFunction' may not exist in Back4App or has wrong parameters"
+                } else if httpResponse.statusCode == 401 {
+                    errorMessage = "❌ Authentication failed (401): Check your REST API Key"
+                } else if httpResponse.statusCode == 404 {
+                    errorMessage = "❌ Not Found (404): Cloud function 'aiFunction' doesn't exist in Back4App"
+                } else {
+                    errorMessage = "❌ Server error: \(httpResponse.statusCode)"
+                }
                 isLoading = false
                 return
             }
             
             // Parse response
             if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                print("📄 Response JSON: \(json)")
+                
+                // Try different response formats
                 if let result = json["result"] as? String {
+                    // Format 1: { "result": "text" }
                     aiResponse = result
+                    print("✅ Success! (Format 1) Response: \(result)")
                 } else if let result = json["response"] as? String {
+                    // Format 2: { "response": "text" }
                     aiResponse = result
+                    print("✅ Success! (Format 2) Response: \(result)")
+                } else if let nested = json["result"] as? [String: Any],
+                          let text = nested["text"] as? String {
+                    // Format 3: { "result": { "text": "..." } }
+                    aiResponse = text
+                    print("✅ Success! (Format 3) Response: \(text)")
+                } else if let nested = json["result"] as? [String: Any],
+                          let content = nested["content"] as? String {
+                    // Format 4: { "result": { "content": "..." } }
+                    aiResponse = content
+                    print("✅ Success! (Format 4) Response: \(content)")
+                } else if let message = json["message"] as? String {
+                    // Format 5: { "message": "text" }
+                    aiResponse = message
+                    print("✅ Success! (Format 5) Response: \(message)")
                 } else {
-                    errorMessage = "Unexpected response format"
+                    // Show what we actually received
+                    errorMessage = "❌ Unexpected format. Check Xcode console for details."
+                    print("⚠️ Full response structure:")
+                    print(json)
+                    print("\n📝 Available keys: \(json.keys)")
+                    
+                    // Try to show any string value we can find
+                    for (key, value) in json {
+                        print("  - \(key): \(type(of: value)) = \(value)")
+                    }
                 }
             } else {
-                errorMessage = "Failed to parse response"
+                errorMessage = "❌ Failed to parse response as JSON"
+                if let rawString = String(data: data, encoding: .utf8) {
+                    print("Raw response: \(rawString)")
+                }
             }
             
         } catch {
-            errorMessage = "Error: \(error.localizedDescription)"
+            errorMessage = "❌ Network error: \(error.localizedDescription)"
+            print("❌ Error: \(error)")
         }
         
         isLoading = false
