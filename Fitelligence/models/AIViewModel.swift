@@ -1,64 +1,143 @@
-import Foundation
+import SwiftUI
 
-class AIViewModel: ObservableObject {
-    @Published var userPrompt = ""
-    @Published var aiResponse = ""
-    @Published var errorMessage: String?
-    @Published var isLoading = false
-
-    func sendPrompt() {
-        guard !userPrompt.isEmpty else { return }
-
-        isLoading = true
-        errorMessage = nil
-        aiResponse = ""
-
-        let url = URL(string: "https://parseapi.back4app.com/functions/aiFunction")!   // <-- change name if needed
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-
-        // REQUIRED HEADERS
-        request.addValue("<APP_ID>", forHTTPHeaderField: "X-Parse-Application-Id")
-        request.addValue("<REST_KEY>", forHTTPHeaderField: "X-Parse-REST-API-Key")
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        // BODY
-        let body: [String: Any] = ["prompt": userPrompt]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body)
-
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            DispatchQueue.main.async {
-                self.isLoading = false
-            }
-
-            if let error = error {
-                DispatchQueue.main.async {
-                    self.errorMessage = error.localizedDescription
+struct AIView: View {
+    @State private var viewModel = AIViewModel()
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                // Title
+                Text("AI Assistant")
+                    .font(.largeTitle)
+                    .bold()
+                    .padding(.top, 10)
+                
+                // Feature Boxes
+                HStack(spacing: 16) {
+                    featureBox(icon: "calendar", color: .blue)
+                    featureBox(icon: "sun.max.fill", color: .purple)
+                    featureBox(icon: "dumbbell.fill", color: .orange)
                 }
-                return
-            }
-
-            guard let data = data else {
-                DispatchQueue.main.async {
-                    self.errorMessage = "No data received."
+                .padding(.horizontal)
+                
+                // Response Area
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Error Message
+                        if let error = viewModel.errorMessage {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.red)
+                                Text(error)
+                                    .foregroundColor(.red)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(10)
+                        }
+                        
+                        // AI Response
+                        if !viewModel.aiResponse.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("AI Response:")
+                                    .font(.headline)
+                                    .foregroundColor(.secondary)
+                                
+                                Text(viewModel.aiResponse)
+                                    .padding()
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(10)
+                            }
+                        } else if !viewModel.isLoading {
+                            // Empty State
+                            VStack(spacing: 12) {
+                                Image(systemName: "bubble.left.and.bubble.right")
+                                    .font(.system(size: 50))
+                                    .foregroundColor(.gray.opacity(0.5))
+                                
+                                Text("Ask me anything about fitness!")
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 40)
+                        }
+                        
+                        // Loading Indicator
+                        if viewModel.isLoading {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle())
+                                Text("Thinking...")
+                                    .foregroundColor(.gray)
+                                Spacer()
+                            }
+                            .padding()
+                        }
+                    }
+                    .padding(.horizontal)
                 }
-                return
-            }
-
-            // Back4App Cloud Functions return: { "result": ... }
-            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let result = json["result"] as? String {
-                DispatchQueue.main.async {
-                    self.aiResponse = result
+                
+                Spacer()
+                
+                // Input Area
+                VStack(spacing: 12) {
+                    // Text Input
+                    TextField("Ask me anything...", text: $viewModel.userPrompt, axis: .vertical)
+                        .textFieldStyle(.plain)
+                        .padding(12)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                        .lineLimit(1...4)
+                        .disabled(viewModel.isLoading)
+                    
+                    // Send Button
+                    Button(action: {
+                        Task {
+                            await viewModel.sendPrompt()
+                        }
+                    }) {
+                        HStack {
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            }
+                            Text("Ask AI")
+                                .bold()
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(viewModel.userPrompt.isEmpty || viewModel.isLoading ? Color.gray : Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                    }
+                    .disabled(viewModel.userPrompt.isEmpty || viewModel.isLoading)
                 }
-            } else {
-                DispatchQueue.main.async {
-                    self.errorMessage = "Invalid response."
-                }
+                .padding(.horizontal)
+                .padding(.bottom, 8)
             }
-        }.resume()
+            .navigationTitle("AI Chat")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+    
+    // MARK: - Feature Box Component
+    func featureBox(icon: String, color: Color) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 16)
+                .fill(color)
+                .frame(height: 80)
+            
+            Image(systemName: icon)
+                .font(.system(size: 28))
+                .foregroundColor(.white)
+        }
     }
 }
 
-
+#Preview {
+    AIView()
+}
