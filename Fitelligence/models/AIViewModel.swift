@@ -92,46 +92,65 @@ class AIViewModel {
             // Parse response
             if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
                 print("📄 Response JSON: \(json)")
+                print("📝 Available keys: \(json.keys)")
+                
+                // Check what's inside "result"
+                if let result = json["result"] {
+                    print("🔍 Type of 'result': \(type(of: result))")
+                    print("🔍 Value of 'result': \(result)")
+                }
                 
                 // Try different response formats
                 if let result = json["result"] as? String {
                     // Format 1: { "result": "text" }
                     aiResponse = result
-                    print("✅ Success! (Format 1) Response: \(result)")
-                } else if let result = json["response"] as? String {
-                    // Format 2: { "response": "text" }
-                    aiResponse = result
-                    print("✅ Success! (Format 2) Response: \(result)")
-                } else if let nested = json["result"] as? [String: Any],
-                          let text = nested["text"] as? String {
-                    // Format 3: { "result": { "text": "..." } }
-                    aiResponse = text
-                    print("✅ Success! (Format 3) Response: \(text)")
-                } else if let nested = json["result"] as? [String: Any],
-                          let content = nested["content"] as? String {
-                    // Format 4: { "result": { "content": "..." } }
-                    aiResponse = content
-                    print("✅ Success! (Format 4) Response: \(content)")
-                } else if let message = json["message"] as? String {
-                    // Format 5: { "message": "text" }
-                    aiResponse = message
-                    print("✅ Success! (Format 5) Response: \(message)")
-                } else {
-                    // Show what we actually received
-                    errorMessage = "❌ Unexpected format. Check Xcode console for details."
-                    print("⚠️ Full response structure:")
-                    print(json)
-                    print("\n📝 Available keys: \(json.keys)")
+                    print("✅ Success! (Format 1 - Direct String) Response: \(result)")
                     
-                    // Try to show any string value we can find
-                    for (key, value) in json {
-                        print("  - \(key): \(type(of: value)) = \(value)")
+                } else if let resultDict = json["result"] as? [String: Any] {
+                    // Format 2: { "result": { ... } } - nested object
+                    print("🔍 'result' is a dictionary with keys: \(resultDict.keys)")
+                    
+                    if let text = resultDict["text"] as? String {
+                        // Format 2a: { "result": { "text": "..." } }
+                        aiResponse = text
+                        print("✅ Success! (Format 2a) Response: \(text)")
+                    } else if let content = resultDict["content"] as? String {
+                        // Format 2b: { "result": { "content": "..." } }
+                        aiResponse = content
+                        print("✅ Success! (Format 2b) Response: \(content)")
+                    } else if let message = resultDict["message"] as? String {
+                        // Format 2c: { "result": { "message": "..." } }
+                        aiResponse = message
+                        print("✅ Success! (Format 2c) Response: \(message)")
+                    } else if let response = resultDict["response"] as? String {
+                        // Format 2d: { "result": { "response": "..." } }
+                        aiResponse = response
+                        print("✅ Success! (Format 2d) Response: \(response)")
+                    } else {
+                        // Show all nested keys
+                        print("⚠️ Nested dictionary keys: \(resultDict.keys)")
+                        for (key, value) in resultDict {
+                            print("  - \(key): \(type(of: value))")
+                        }
+                        errorMessage = "❌ Found 'result' object but couldn't find text inside. Check console."
                     }
+                    
+                } else if let resultArray = json["result"] as? [Any] {
+                    // Format 3: { "result": [ ... ] } - array
+                    print("🔍 'result' is an array with \(resultArray.count) items")
+                    print("🔍 Array contents: \(resultArray)")
+                    errorMessage = "❌ 'result' is an array. Check console for structure."
+                    
+                } else {
+                    // Unknown type
+                    print("⚠️ 'result' has unexpected type: \(type(of: json["result"]!))")
+                    errorMessage = "❌ Unexpected response format. Check Xcode console for details."
                 }
+                
             } else {
                 errorMessage = "❌ Failed to parse response as JSON"
                 if let rawString = String(data: data, encoding: .utf8) {
-                    print("Raw response: \(rawString)")
+                    print("📄 Raw response: \(rawString)")
                 }
             }
             
@@ -149,3 +168,4 @@ class AIViewModel {
         errorMessage = nil
     }
 }
+
