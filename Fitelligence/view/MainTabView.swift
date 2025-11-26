@@ -1,226 +1,151 @@
-//
-//  MainTabView.swift
-//  Fitelligence
-//
-//  Created by Jake Capuana on 11/24/25.
-//
+import Foundation
+import Observation
 
-import SwiftUI
-
-struct MainTabView: View {
-    @State private var selectedTab = 0
+@Observable
+@MainActor
+class AIViewModel {
+    // MARK: - Published Properties
+    var userPrompt: String = ""
+    var aiResponse: String = ""
+    var isLoading: Bool = false
+    var errorMessage: String? = nil
     
-    var body: some View {
-        TabView(selection: $selectedTab) {
-            // Calendar/Workout Planner Tab - Using Robert's view
-            CustomCalendarView()
-                .tabItem {
-                    Image(systemName: "calendar")
-                        .font(.system(size: 24))
-                }
-                .tag(0)
-            
-            // AI Assistant Tab
-            AIAssistantView()
-                .tabItem {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 24))
-                }
-                .tag(1)
-            
-            // My Exercises Tab
-            MyExercisesView()
-                .tabItem {
-                    Image(systemName: "figure.strengthtraining.traditional")
-                        .font(.system(size: 24))
-                }
-                .tag(2)
+    // MARK: - Configuration
+    private let endpoint = URL(string: "https://parseapi.back4app.com/functions/aiFunction")!
+    private let appId = "1g9mCtQTndUdapOL2URSjzBarbEVJpBxXI09peRa"
+    private let restKey = "YOUR_REST_API_KEY"  // Replace with your REST API Key
+    
+    // MARK: - Send Prompt to Back4App
+    func sendPrompt() async {
+        // Validate input
+        let prompt = userPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !prompt.isEmpty else {
+            errorMessage = "Please enter a prompt"
+            return
         }
-        .accentColor(.blue) // Selected tab color
-    }
-}
-
-// AI assistant view
-struct AIAssistantView: View {
-    @State private var viewModel = AIViewModel()
-    @FocusState private var isTextFieldFocused: Bool
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
+        
+        // Check if API key is configured
+        if restKey == "YOUR_REST_API_KEY" {
+            errorMessage = "❌ REST API Key not configured. Add it in AIViewModel.swift"
+            return
+        }
+        
+        // Reset state
+        isLoading = true
+        errorMessage = nil
+        aiResponse = ""
+        
+        // Create request
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        
+        // Add headers
+        request.setValue(appId, forHTTPHeaderField: "X-Parse-Application-Id")
+        request.setValue(restKey, forHTTPHeaderField: "X-Parse-REST-API-Key")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        // Create request body
+        let body: [String: String] = ["prompt": prompt]
+        
+        print("🚀 Sending request to: \(endpoint)")
+        print("📦 Body: \(body)")
+        
+        do {
+            // Encode body to JSON
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
             
-            // Response Area
-            if viewModel.isLoading {
-                VStack(spacing: 16) {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle())
-                        .scaleEffect(1.5)
-                    Text("Thinking...")
-                        .foregroundColor(.gray)
+            // Make the request
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            // Check HTTP response
+            guard let httpResponse = response as? HTTPURLResponse else {
+                errorMessage = "❌ Invalid response from server"
+                isLoading = false
+                return
+            }
+            
+            print("📡 Response status: \(httpResponse.statusCode)")
+            
+            // Try to parse error from server
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                print("📄 Response JSON: \(json)")
+            }
+            
+            guard (200...299).contains(httpResponse.statusCode) else {
+                // Try to get detailed error message
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let errorDetail = json["error"] as? String {
+                    errorMessage = "❌ Server error: \(errorDetail)"
+                } else if httpResponse.statusCode == 400 {
+                    errorMessage = "❌ Bad Request (400): Cloud function 'aiFunction' may not exist in Back4App or has wrong parameters"
+                } else if httpResponse.statusCode == 401 {
+                    errorMessage = "❌ Authentication failed (401): Check your REST API Key"
+                } else if httpResponse.statusCode == 404 {
+                    errorMessage = "❌ Not Found (404): Cloud function 'aiFunction' doesn't exist in Back4App"
+                } else {
+                    errorMessage = "❌ Server error: \(httpResponse.statusCode)"
                 }
-            } else if !viewModel.aiResponse.isEmpty {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Fitelligence says:")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                        
-                        Text(viewModel.aiResponse)
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
+                isLoading = false
+                return
+            }
+            
+            // Parse response
+            if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                print("📄 Response JSON: \(json)")
+                
+                // Try different response formats
+                if let result = json["result"] as? String {
+                    // Format 1: { "result": "text" }
+                    aiResponse = result
+                    print("✅ Success! (Format 1) Response: \(result)")
+                } else if let result = json["response"] as? String {
+                    // Format 2: { "response": "text" }
+                    aiResponse = result
+                    print("✅ Success! (Format 2) Response: \(result)")
+                } else if let nested = json["result"] as? [String: Any],
+                          let text = nested["text"] as? String {
+                    // Format 3: { "result": { "text": "..." } }
+                    aiResponse = text
+                    print("✅ Success! (Format 3) Response: \(text)")
+                } else if let nested = json["result"] as? [String: Any],
+                          let content = nested["content"] as? String {
+                    // Format 4: { "result": { "content": "..." } }
+                    aiResponse = content
+                    print("✅ Success! (Format 4) Response: \(content)")
+                } else if let message = json["message"] as? String {
+                    // Format 5: { "message": "text" }
+                    aiResponse = message
+                    print("✅ Success! (Format 5) Response: \(message)")
+                } else {
+                    // Show what we actually received
+                    errorMessage = "❌ Unexpected format. Check Xcode console for details."
+                    print("⚠️ Full response structure:")
+                    print(json)
+                    print("\n📝 Available keys: \(json.keys)")
+                    
+                    // Try to show any string value we can find
+                    for (key, value) in json {
+                        print("  - \(key): \(type(of: value)) = \(value)")
                     }
-                    .padding(.horizontal)
                 }
             } else {
-                VStack(spacing: 16) {
-                    Image(systemName: "wand.and.stars")
-                        .font(.system(size: 80))
-                        .foregroundColor(.gray.opacity(0.5))
-                    
-                    Text("Ask Fitelligence Anything")
-                        .font(.title2)
-                        .bold()
+                errorMessage = "❌ Failed to parse response as JSON"
+                if let rawString = String(data: data, encoding: .utf8) {
+                    print("Raw response: \(rawString)")
                 }
             }
             
-            // Error Message
-            if let error = viewModel.errorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundColor(.red)
-                    .padding(.horizontal)
-            }
-            
-            Spacer()
-            
-            // Input field with send button
-            HStack(spacing: 12) {
-                TextField("Suggest a good workout routine for leg day...", text: $viewModel.userPrompt, axis: .vertical)
-                    .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(25)
-                    .lineLimit(1...4)
-                    .focused($isTextFieldFocused)
-                    .submitLabel(.send)
-                    .onSubmit {
-                        sendMessage()
-                    }
-                    .disabled(viewModel.isLoading)
-                
-                // Send Button
-                Button(action: {
-                    sendMessage()
-                }) {
-                    ZStack {
-                        Circle()
-                            .fill(viewModel.userPrompt.isEmpty || viewModel.isLoading ? Color.gray.opacity(0.3) : Color.purple)
-                            .frame(width: 50, height: 50)
-                        
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        } else {
-                            Image(systemName: "arrow.up")
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                    }
-                }
-                .disabled(viewModel.userPrompt.isEmpty || viewModel.isLoading)
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 20)
+        } catch {
+            errorMessage = "❌ Network error: \(error.localizedDescription)"
+            print("❌ Error: \(error)")
         }
+        
+        isLoading = false
     }
     
-    private func sendMessage() {
-        guard !viewModel.userPrompt.isEmpty && !viewModel.isLoading else { return }
-        isTextFieldFocused = false
-        Task {
-            await viewModel.sendPrompt()
-        }
+    // MARK: - Clear Response
+    func clearResponse() {
+        aiResponse = ""
+        errorMessage = nil
     }
-}
-
-// My Exercises View
-struct MyExercisesView: View {
-    var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("My Exercises")
-                        .font(.largeTitle)
-                        .bold()
-                        .padding(.horizontal)
-                        .padding(.top)
-                    
-                    // Example exercise cards
-                    ExerciseCard(name: "Squats", reps: 20, sets: 3, weight: 140)
-                    ExerciseCard(name: "Bench Press", reps: 10, sets: 3, weight: 160)
-                    ExerciseCard(name: "Bicep Curls", reps: 10, sets: 2, weight: 30)
-                }
-                .padding(.bottom, 100)
-            }
-            .navigationBarHidden(true)
-        }
-    }
-}
-
-// Exercise Card Component
-struct ExerciseCard: View {
-    let name: String
-    let reps: Int
-    let sets: Int
-    let weight: Int
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "figure.strengthtraining.traditional")
-                    .font(.title2)
-                    .foregroundColor(.gray)
-                
-                Text(name)
-                    .font(.title3)
-                    .bold()
-                
-                Spacer()
-            }
-            
-            HStack(spacing: 20) {
-                StatBadge(label: "Reps", value: "\(reps)")
-                StatBadge(label: "Sets", value: "\(sets)")
-                StatBadge(label: "Weight", value: "\(weight)")
-            }
-        }
-        .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(16)
-        .padding(.horizontal)
-    }
-}
-
-struct StatBadge: View {
-    let label: String
-    let value: String
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.gray)
-            Text(value)
-                .font(.body)
-                .bold()
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.white)
-                .cornerRadius(8)
-        }
-    }
-}
-
-#Preview {
-    MainTabView()
 }
