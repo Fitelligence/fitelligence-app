@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AIView: View {
     @State private var viewModel = AIViewModel()
+    @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
         NavigationStack {
@@ -11,14 +12,6 @@ struct AIView: View {
                     .font(.largeTitle)
                     .bold()
                     .padding(.top, 10)
-                
-                // Feature Boxes
-                HStack(spacing: 16) {
-                    featureBox(icon: "calendar", color: .blue)
-                    featureBox(icon: "sun.max.fill", color: .purple)
-                    featureBox(icon: "dumbbell.fill", color: .orange)
-                }
-                .padding(.horizontal)
                 
                 // Response Area
                 ScrollView {
@@ -85,60 +78,63 @@ struct AIView: View {
                 
                 // Input Area
                 VStack(spacing: 12) {
-                    // Text Input
-                    TextField("Ask me anything...", text: $viewModel.userPrompt, axis: .vertical)
-                        .textFieldStyle(.plain)
-                        .padding(12)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
-                        .lineLimit(1...4)
-                        .disabled(viewModel.isLoading)
-                        .onSubmit {
-                            Task {
-                                await viewModel.sendPrompt()
+                    // Text Input with Send Button
+                    HStack(spacing: 12) {
+                        TextField("Ask me anything...", text: $viewModel.userPrompt, axis: .vertical)
+                            .textFieldStyle(.plain)
+                            .padding(12)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                            .lineLimit(1...4)
+                            .disabled(viewModel.isLoading)
+                            .focused($isTextFieldFocused)
+                            .submitLabel(.send)
+                            .onSubmit {
+                                sendMessage()
+                            }
+                        
+                        // Send Button (Circle with Arrow)
+                        Button(action: {
+                            sendMessage()
+                        }) {
+                            ZStack {
+                                Circle()
+                                    .fill(viewModel.userPrompt.isEmpty || viewModel.isLoading ? Color.gray.opacity(0.3) : Color.blue)
+                                    .frame(width: 44, height: 44)
+                                
+                                if viewModel.isLoading {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                        .scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "arrow.up")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(.white)
+                                }
                             }
                         }
-                    
-                    // Send Button
-                    Button(action: {
-                        Task {
-                            await viewModel.sendPrompt()
-                        }
-                    }) {
-                        HStack {
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            }
-                            Text("Ask AI")
-                                .bold()
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(viewModel.userPrompt.isEmpty || viewModel.isLoading ? Color.gray : Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
+                        .disabled(viewModel.userPrompt.isEmpty || viewModel.isLoading)
                     }
-                    .disabled(viewModel.userPrompt.isEmpty || viewModel.isLoading)
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
                 .padding(.bottom, 8)
             }
             .navigationTitle("AI Chat")
             .navigationBarTitleDisplayMode(.inline)
+            .onTapGesture {
+                isTextFieldFocused = false
+            }
         }
     }
     
-    // MARK: - Feature Box Component
-    func featureBox(icon: String, color: Color) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 16)
-                .fill(color)
-                .frame(height: 80)
-            
-            Image(systemName: icon)
-                .font(.system(size: 28))
-                .foregroundColor(.white)
+    // MARK: - Send Message Function
+    private func sendMessage() {
+        guard !viewModel.userPrompt.isEmpty && !viewModel.isLoading else { return }
+        
+        isTextFieldFocused = false // Dismiss keyboard
+        
+        Task {
+            await viewModel.sendPrompt()
         }
     }
 }
