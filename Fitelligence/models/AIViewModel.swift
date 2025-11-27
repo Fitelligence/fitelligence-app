@@ -126,6 +126,17 @@ class AIViewModel {
                         // Format 2d: { "result": { "response": "..." } }
                         aiResponse = response
                         print("✅ Success! (Format 2d) Response: \(response)")
+                    } else if let exercises = resultDict["exercises"] as? [[String: Any]] {
+                        // Format 2e: { "result": { "exercises": [...] } }
+                        // Format the exercises as a nice list
+                        var formattedResponse = "Here are some recommended exercises:\n\n"
+                        for (index, exercise) in exercises.enumerated() {
+                            if let name = exercise["name"] as? String {
+                                formattedResponse += "\(index + 1). \(name)\n"
+                            }
+                        }
+                        aiResponse = formattedResponse
+                        print("✅ Success! (Format 2e - Exercises) Found \(exercises.count) exercises")
                     } else {
                         // Show all nested keys
                         print("⚠️ Nested dictionary keys: \(resultDict.keys)")
