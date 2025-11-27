@@ -13,7 +13,7 @@ class AIViewModel {
     // MARK: - Configuration
     private let endpoint = URL(string: "https://parseapi.back4app.com/functions/aiFunction")!
     private let appId = "1g9mCtQTndUdapOL2URSjzBarbEVJpBxXI09peRa"
-    private let restKey = "YOUR_REST_API_KEY"  // Replace with your REST API Key
+    private let restKey = "mtNfXHtOc1fkkWZokBaRNlr2KxBJ3KxvABraR4fc"  // Replace with your REST API Key
     
     // MARK: - Send Prompt to Back4App
     func sendPrompt() async {
@@ -179,3 +179,4 @@ class AIViewModel {
         errorMessage = nil
     }
 }
+
