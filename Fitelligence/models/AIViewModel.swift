@@ -168,4 +168,3 @@ class AIViewModel {
         errorMessage = nil
     }
 }
-
