@@ -5,13 +5,6 @@
 //  Created by Robert Penate + Jake C on 11/5/25.
 //
 
-//
-//  CustomCalendarView.swift
-//  testing
-//
-//  Created by Robert Penate on 11/5/25.
-//
-
 import SwiftUI
 
 struct CustomCalendarView: View {

@@ -1,3 +1,5 @@
+// Created by Robert Penate on 11/22/25.
+
 import SwiftUI
 import ParseSwift
 
@@ -75,12 +77,11 @@ struct WorkoutDetailView: View {
         do {
             let results = try await Exercise
                 .query("workout" == Pointer<Workout>(objectId: id))
-                .include(["exercise"])   // ✅ IMPORTANT
+                .include(["exercise"])
                 .find()
 
             exercises = results
 
-            // ✅ Fetch names safely
             for exercise in results {
                 if let pointer = exercise.exercise,
                    let item = try? await pointer.fetch() {
@@ -95,12 +96,11 @@ struct WorkoutDetailView: View {
         isLoading = false
     }
     
-    //WIP
     func deleteWorkout() async {
         guard let workoutId = workout.objectId else { return }
 
         do {
-            // 1. Delete exercises linked to this workout
+            // Delete exercises linked to this workout
             let exerciseQuery = Exercise
                 .query("workout" == Pointer<Workout>(objectId: workoutId))
 
@@ -110,10 +110,10 @@ struct WorkoutDetailView: View {
                 _ = try await exercise.delete()
             }
 
-            // 2. Delete workout itself
+            // Delete workout
             _ = try await workout.delete()
 
-            // 3. Return to previous screen
+            // Return to previous screen
             await MainActor.run {
                 dismiss()
             }

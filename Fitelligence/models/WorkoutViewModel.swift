@@ -16,6 +16,8 @@ class WorkoutViewModel {
     var trackedExercises: [ExerciseLibraryItem: [Set]] = [:]
     
     //edit by robert
+    var exercisesForWorkout: [String: [Exercise]] = [:]
+    
     var workoutsForSelectedDate: [Workout] = []
     private let calendar = Calendar.current
     //end edit
@@ -107,10 +109,9 @@ class WorkoutViewModel {
     
     func refresh(for date: Date) {
         Task {
-            await loadWorkouts(for: date)
+            loadWorkouts(for: date)
         }
     }
-    
     
     func loadWorkouts(for date: Date) {
         // Offload to background priority
@@ -124,12 +125,14 @@ class WorkoutViewModel {
                     .where("scheduleDate" < endOfDay)
                     .include(["user"])
 
-                // Perform query on background thread
-                let results = try await query.find()  // <-- heavy work
+                // Perform query
+                let results = try await query.find()
 
                 // Update UI on main thread
                 await MainActor.run {
                     self.workoutsForSelectedDate = results
+                    
+                    
                 }
             } catch {
                 // Handle errors on main thread
@@ -141,10 +144,47 @@ class WorkoutViewModel {
         }
     }
 
-    
+    func loadWorkoutsWithExercises(for date: Date) {
+            let startOfDay = calendar.startOfDay(for: date)
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+            
+            Task(priority: .background) {
+                do {
+                    // Fetch workouts for the day
+                    let workouts = try await Workout.query("scheduleDate" >= startOfDay)
+                        .where("scheduleDate" < endOfDay)
+                        .include(["user"])
+                        .find()
+                    
+                    await MainActor.run {
+                        self.workoutsForSelectedDate = workouts
+                    }
+                    
+                    // Fetch exercises for each workout
+                    for workout in workouts {
+                        guard let workoutId = workout.objectId else { continue }
+                        let exercises = try await Exercise.query("workout" == Pointer<Workout>(objectId: workoutId))
+                            .include(["exercise"])
+                            .find()
+                        
+                        await MainActor.run {
+                            self.exercisesForWorkout[workoutId] = exercises
+                        }
+                    }
+                    
+                } catch {
+                    await MainActor.run {
+                        self.workoutsForSelectedDate = []
+                        self.exercisesForWorkout = [:]
+                        print("Failed to load workouts with exercises:", error.localizedDescription)
+                    }
+                }
+            }
+        }
+    }
     //end edit
 
-}
+
 
 class WorkoutService {
     

@@ -11,7 +11,7 @@ class AIViewModel {
     var errorMessage: String? = nil
     
     // MARK: - Configuration
-    private let endpoint = URL(string: "https://parseapi.back4app.com/functions/aiFunction")!
+    private let endpoint = URL(string: "https://parseapi.back4app.com/functions/getWorkoutPlan")!
     private let appId = "1g9mCtQTndUdapOL2URSjzBarbEVJpBxXI09peRa"
     private let restKey = "mtNfXHtOc1fkkWZokBaRNlr2KxBJ3KxvABraR4fc"  // Replace with your REST API Key
     
