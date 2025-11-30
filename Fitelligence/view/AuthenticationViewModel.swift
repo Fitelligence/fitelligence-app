@@ -7,24 +7,8 @@
 
 import SwiftUI
 import ParseSwift
+import Combine
 
-// MARK: - User Model
-struct User: ParseUser {
-    var objectId: String?
-    var createdAt: Date?
-    var updatedAt: Date?
-    var ACL: ParseACL?
-    var originalData: Data?
-    
-    var username: String?
-    var email: String?
-    var emailVerified: Bool?
-    var password: String?
-    var authData: [String: [String: String]?]?
-    
-    // Custom field for full name
-    var fullName: String?
-}
 
 class AuthenticationViewModel: ObservableObject {
     @Published var email = ""
