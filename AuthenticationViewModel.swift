@@ -6,137 +6,194 @@
 //
 
 import SwiftUI
+import ParseSwift
 
-struct LoginView: View {
-    @StateObject private var viewModel = AuthenticationViewModel()
-    @State private var showSignUp = false
+// MARK: - User Model
+struct User: ParseUser {
+    var objectId: String?
+    var createdAt: Date?
+    var updatedAt: Date?
+    var ACL: ParseACL?
+    var originalData: Data?
     
-    var body: some View {
-        NavigationView {
-            ZStack {
-                Color(UIColor.systemGroupedBackground)
-                    .ignoresSafeArea()
-                
-                VStack(spacing: 0) {
-                    // Logo/Brand
-                    Text("Fitelligence")
-                        .font(.system(size: 48, weight: .semibold))
-                        .foregroundColor(.black)
-                        .padding(.top, 80)
-                        .padding(.bottom, 60)
+    var username: String?
+    var email: String?
+    var emailVerified: Bool?
+    var password: String?
+    var authData: [String: [String: String]?]?
+    
+    // Custom field for full name
+    var fullName: String?
+}
+
+class AuthenticationViewModel: ObservableObject {
+    @Published var email = ""
+    @Published var password = ""
+    @Published var fullName = ""
+    @Published var isAuthenticated = false
+    
+    @Published var showError = false
+    @Published var errorMessage = ""
+    
+    @Published var showSuccess = false
+    @Published var successMessage = ""
+    
+    // MARK: - Validation
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        return emailPredicate.evaluate(with: email)
+    }
+    
+    private func isValidPassword(_ password: String) -> Bool {
+        return password.count >= 6
+    }
+    
+    // MARK: - Login (Real Parse Authentication)
+    func login() {
+        // Validate inputs
+        guard !email.isEmpty else {
+            showErrorAlert("Please enter your email")
+            return
+        }
+        
+        guard isValidEmail(email) else {
+            showErrorAlert("Please enter a valid email address")
+            return
+        }
+        
+        guard !password.isEmpty else {
+            showErrorAlert("Please enter your password")
+            return
+        }
+        
+        // Use Parse login - will FAIL if account doesn't exist
+        User.login(username: email, password: password) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let user):
+                    print("✅ User logged in successfully:", user)
+                    self.isAuthenticated = true
+                    self.showSuccessAlert("Welcome back!")
                     
-                    // Login Card
-                    VStack(alignment: .leading, spacing: 24) {
-                        Text("Login")
-                            .font(.system(size: 32, weight: .semibold))
-                            .foregroundColor(.black)
-                            .padding(.bottom, 8)
-                        
-                        // Email Field
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Email")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.black)
-                            
-                            TextField("Enter your email", text: $viewModel.email)
-                                .textFieldStyle(CustomTextFieldStyle())
-                                .textInputAutocapitalization(.never)
-                                .keyboardType(.emailAddress)
-                                .autocorrectionDisabled()
-                        }
-                        
-                        // Password Field
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Password")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.black)
-                            
-                            SecureField("Enter your password", text: $viewModel.password)
-                                .textFieldStyle(CustomTextFieldStyle())
-                        }
-                        
-                        // Login Button
-                        Button(action: {
-                            viewModel.login()
-                        }) {
-                            Text("Log in")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 56)
-                                .background(Color(red: 0.25, green: 0.31, blue: 0.71))
-                                .cornerRadius(28)
-                        }
-                        .padding(.top, 8)
-                        
-                        // Forgot Password
-                        Button(action: {
-                            viewModel.forgotPassword()
-                        }) {
-                            Text("Forgot your password?")
-                                .font(.system(size: 14))
-                                .foregroundColor(.gray)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 8)
+                case .failure(let error):
+                    print("❌ Login failed:", error.message)
+                    // Parse will return an error if account doesn't exist
+                    if error.message.contains("Invalid username/password") {
+                        self.showErrorAlert("Invalid email or password. Please sign up if you don't have an account.")
+                    } else {
+                        self.showErrorAlert(error.message)
                     }
-                    .padding(32)
-                    .background(Color.white)
-                    .cornerRadius(20)
-                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
-                    .padding(.horizontal, 24)
-                    
-                    Spacer()
-                    
-                    // Sign Up Link
-                    HStack(spacing: 4) {
-                        Text("Don't have an account?")
-                            .font(.system(size: 15))
-                            .foregroundColor(.gray)
-                        
-                        Button(action: {
-                            showSignUp = true
-                        }) {
-                            Text("Sign up")
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundColor(Color(red: 0.25, green: 0.31, blue: 0.71))
-                        }
-                    }
-                    .padding(.bottom, 40)
                 }
-            }
-            .navigationBarHidden(true)
-            .sheet(isPresented: $showSignUp) {
-                SignUpView()
-            }
-            .alert("Error", isPresented: $viewModel.showError) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(viewModel.errorMessage)
-            }
-            .alert("Success", isPresented: $viewModel.showSuccess) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(viewModel.successMessage)
             }
         }
     }
-}
-
-// Custom TextField Style
-struct CustomTextFieldStyle: TextFieldStyle {
-    func _body(configuration: TextField<Self._Label>) -> some View {
-        configuration
-            .padding()
-            .frame(height: 56)
-            .background(Color(UIColor.systemGray6))
-            .cornerRadius(28)
-            .font(.system(size: 16))
+    
+    // MARK: - Sign Up (Real Parse Account Creation)
+    func signUp(confirmPassword: String) {
+        // Validate inputs
+        guard !fullName.isEmpty else {
+            showErrorAlert("Please enter your full name")
+            return
+        }
+        
+        guard !email.isEmpty else {
+            showErrorAlert("Please enter your email")
+            return
+        }
+        
+        guard isValidEmail(email) else {
+            showErrorAlert("Please enter a valid email address")
+            return
+        }
+        
+        guard !password.isEmpty else {
+            showErrorAlert("Please enter your password")
+            return
+        }
+        
+        guard isValidPassword(password) else {
+            showErrorAlert("Password must be at least 6 characters long")
+            return
+        }
+        
+        guard password == confirmPassword else {
+            showErrorAlert("Passwords do not match")
+            return
+        }
+        
+        // Create real Parse user account
+        var newUser = User()
+        newUser.username = email
+        newUser.email = email
+        newUser.password = password
+        newUser.fullName = fullName
+        
+        newUser.signup { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let user):
+                    print("✅ User account created:", user)
+                    self.showSuccessAlert("Account created successfully! You can now log in.")
+                    self.clearFields()
+                    
+                case .failure(let error):
+                    print("❌ Sign up failed:", error.message)
+                    // Parse will return error if email already exists
+                    if error.message.contains("Account already exists") {
+                        self.showErrorAlert("An account with this email already exists. Please log in.")
+                    } else {
+                        self.showErrorAlert(error.message)
+                    }
+                }
+            }
+        }
     }
-}
-
-#Preview {
-    LoginView()
+    
+    // MARK: - Forgot Password (Real Parse Password Reset)
+    func forgotPassword() {
+        guard !email.isEmpty else {
+            showErrorAlert("Please enter your email address first")
+            return
+        }
+        
+        guard isValidEmail(email) else {
+            showErrorAlert("Please enter a valid email address")
+            return
+        }
+        
+        // Use Parse password reset
+        User.passwordReset(email: email) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    print("✅ Password reset email sent to:", self.email)
+                    self.showSuccessAlert("Password reset link sent to \(self.email)")
+                    
+                case .failure(let error):
+                    print("❌ Password reset failed:", error.message)
+                    self.showErrorAlert(error.message)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Helper Methods
+    private func showErrorAlert(_ message: String) {
+        errorMessage = message
+        showError = true
+    }
+    
+    private func showSuccessAlert(_ message: String) {
+        successMessage = message
+        showSuccess = true
+    }
+    
+    func clearFields() {
+        email = ""
+        password = ""
+        fullName = ""
+    }
 }
 
 
