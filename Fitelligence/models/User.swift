@@ -20,4 +20,7 @@ struct User: ParseUser, Codable {
     var emailVerified: Bool?
     var password: String?
     var authData: [String: [String: String]?]?
+    
+    // Custom field for full name
+    var fullName: String?
 }
