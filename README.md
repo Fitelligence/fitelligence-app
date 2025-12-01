@@ -48,15 +48,15 @@ Fitelligence elevates the standard workout log by placing a personal AI trainer 
 * User can login.
 - [x] [**Registration Screen**]
 * User can register for an account using an email and a password.
-- [ ] [**AI Screen**]
+- [x] [**AI Screen**]
 * User can type in a simple request to the AI and the AI will generate a complete workout plan that fits the user's needs and constraints.
 * The user can then import the given exercises to their workout log.
 * (optional) User can have a "conversation" with the AI, meaning it can continue talking to the AI to tweak the plan until desired.
-- [ ] [**Previous Workouts Screen**]
-      * [ ] User can view their exercises so that they can see their progress. 
-      * [ ] User can modify and update previous exercises. 
+- [x] [**Previous Workouts Screen**]
+      * [x] User can view their exercises so that they can see their progress. 
+      * [x] User can modify and update previous exercises. 
       * [x] (optional) User can view their previous workouts in a nice calendar view for easier tracking.
-- [ ] [**Current Workout Screen**]
+- [x] [**Current Workout Screen**]
 * User can track an individual exercise by the category (abs, chest, legs, etc.), weight, reps, and set. 
 - [ ] [**Add Custom Workout Form/Screen**]
 * User can add new custom exercises if a desired exercise is not already an option.
@@ -67,16 +67,16 @@ Fitelligence elevates the standard workout log by placing a personal AI trainer 
 **Tab Navigation** (Tab to Screen)
 
 
-- [ ] AI Screen
-- [ ] Previous Workouts Screen
-- [ ] Current Workout Screen
+- [x] AI Screen
+- [x] Scheduled Workouts Screen
+- [x] Current Workout Screen
 
 **Flow Navigation** (Screen to Screen)
 
 - [x] **Login Screen**
-  * Leads to **Previous Workouts Screen**
+  * Leads to **Scheduled Workouts Screen**
 - [x] **Registration Screen**
-  * Leads to **Previous Workouts Screen**
+  * Leads to **Login Screen**
 
 
 ## Wireframes
