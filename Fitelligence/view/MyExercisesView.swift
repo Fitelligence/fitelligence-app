@@ -28,8 +28,13 @@ struct MyExercisesView: View {
                         .padding(.top)
                     
                     if workoutVM.workoutsForSelectedDate.isEmpty {
-                        EmptyWorkoutsView()
-                            .padding(.top, 40)
+                        VStack {
+                            Spacer()
+                            EmptyWorkoutsView()
+                            Spacer()
+                        }
+                        .frame(minHeight: UIScreen.main.bounds.height * 0.7)
+                        .frame(maxWidth: .infinity)
                     } else {
                         ForEach(workoutVM.workoutsForSelectedDate, id: \.objectId) { workout in
                             WorkoutView(
@@ -159,7 +164,7 @@ struct ExerciseView: View {
     
     @ViewBuilder
     var body: some View {
-        let name = exercise.objectId.flatMap { exerciseNames[$0] } ?? "Loading..."
+        let name  = exercise.objectId.flatMap { exerciseNames[$0] } ?? "Loading..."
         
         if let sets = exercise.sets, !sets.isEmpty {
             ForEach(sets) { set in
@@ -173,59 +178,6 @@ struct ExerciseView: View {
         } else {
             Text(name)
                 .padding(.horizontal)
-        }
-    }
-}
-
-struct ExerciseCard: View {
-    let name: String
-    let reps: Int
-    let sets: Int
-    let weight: Int
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "figure.strengthtraining.traditional")
-                    .font(.title2)
-                    .foregroundColor(.gray)
-                
-                Text(name)
-                    .font(.title3)
-                    .bold()
-                
-                Spacer()
-            }
-            
-            HStack(spacing: 20) {
-                StatBadge(label: "Reps", value: "\(reps)")
-                StatBadge(label: "Sets", value: "\(sets)")
-                StatBadge(label: "Weight", value: "\(weight)")
-            }
-        }
-        .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(16)
-        .padding(.horizontal)
-    }
-}
-
-struct StatBadge: View {
-    let label: String
-    let value: String
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(label)
-                .font(.caption)
-                .foregroundColor(.gray)
-            Text(value)
-                .font(.body)
-                .bold()
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.white)
-                .cornerRadius(8)
         }
     }
 }

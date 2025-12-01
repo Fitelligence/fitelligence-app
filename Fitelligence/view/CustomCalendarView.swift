@@ -16,6 +16,8 @@ struct CustomCalendarView: View {
     
     private let calendar = Calendar.current
     
+    @EnvironmentObject var authVM: AuthenticationViewModel
+
     // Sets up calendar
     private var currentMonth: Date {
         calendar.date(byAdding: .month, value: currentMonthOffset, to: Date()) ?? Date()
@@ -47,15 +49,30 @@ struct CustomCalendarView: View {
             VStack(spacing: 16) {
                 // User profile/name WIP
                 HStack {
-                    Text("Hello user!").font(.title).bold()
-                        .frame(alignment: .leading)
+                    Menu {
+                        Button("Sign Out", role: .destructive) {
+                            authVM.logout()
+                        }
+                    } label: {
+                        HStack {
+                            Text("Hello, \(authVM.firstName)!")
+                                .font(.title).bold()
+                            Image(systemName: "chevron.down")
+                                .font(.headline)
+                        }
                         .padding()
+                    }
+
                     Spacer()
                     
-                    NavigationLink(destination: CreateWorkoutView()) {
+                    NavigationLink(destination: CreateWorkoutView(
+                        workoutVM: workoutVM,
+                        selectedDate: selectedDate
+                    )) {
                         Image(systemName: "plus.circle")
                             .padding(.trailing)
                     }
+
                 }
                 
                 // Month Header

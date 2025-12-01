@@ -75,6 +75,11 @@ class WorkoutViewModel {
         workout.name = name
         workout.scheduleDate = date
         
+        
+        if let current = User.current {
+            workout.user = try? current.toPointer()
+        }
+        
         do {
             let savedWorkout = try await workout.save()
             guard let workoutId = savedWorkout.objectId else { return }
@@ -114,28 +119,25 @@ class WorkoutViewModel {
     }
     
     func loadWorkouts(for date: Date) {
-        // Offload to background priority
         Task(priority: .background) {
             let startOfDay = calendar.startOfDay(for: date)
             let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
 
+            guard let current = User.current else { return }
+            let userPointer = try? current.toPointer()
+
             do {
-                // Build query
                 let query = Workout.query("scheduleDate" >= startOfDay)
                     .where("scheduleDate" < endOfDay)
+                    .where("user" == userPointer)
                     .include(["user"])
 
-                // Perform query
                 let results = try await query.find()
 
-                // Update UI on main thread
                 await MainActor.run {
                     self.workoutsForSelectedDate = results
-                    
-                    
                 }
             } catch {
-                // Handle errors on main thread
                 await MainActor.run {
                     self.workoutsForSelectedDate = []
                     print("Failed to load workouts:", error.localizedDescription)
@@ -144,44 +146,83 @@ class WorkoutViewModel {
         }
     }
 
+    
     func loadWorkoutsWithExercises(for date: Date) {
-            let startOfDay = calendar.startOfDay(for: date)
-            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-            
-            Task(priority: .background) {
-                do {
-                    // Fetch workouts for the day
-                    let workouts = try await Workout.query("scheduleDate" >= startOfDay)
-                        .where("scheduleDate" < endOfDay)
-                        .include(["user"])
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+        Task(priority: .background) {
+            guard let current = User.current else { return }
+            let userPointer = try? current.toPointer()
+
+            do {
+                // Fetch workouts for THIS user only
+                let workouts = try await Workout.query("scheduleDate" >= startOfDay)
+                    .where("scheduleDate" < endOfDay)
+                    .where("user" == userPointer)
+                    .include(["user"])
+                    .find()
+
+                await MainActor.run {
+                    self.workoutsForSelectedDate = workouts
+                }
+
+                // Fetch exercises for each workout
+                for workout in workouts {
+                    guard let workoutId = workout.objectId else { continue }
+                    let exercises = try await Exercise.query("workout" == Pointer<Workout>(objectId: workoutId))
+                        .include(["exercise"])
                         .find()
-                    
+
                     await MainActor.run {
-                        self.workoutsForSelectedDate = workouts
+                        self.exercisesForWorkout[workoutId] = exercises
                     }
-                    
-                    // Fetch exercises for each workout
-                    for workout in workouts {
-                        guard let workoutId = workout.objectId else { continue }
-                        let exercises = try await Exercise.query("workout" == Pointer<Workout>(objectId: workoutId))
-                            .include(["exercise"])
-                            .find()
-                        
-                        await MainActor.run {
-                            self.exercisesForWorkout[workoutId] = exercises
-                        }
-                    }
-                    
-                } catch {
-                    await MainActor.run {
-                        self.workoutsForSelectedDate = []
-                        self.exercisesForWorkout = [:]
-                        print("Failed to load workouts with exercises:", error.localizedDescription)
-                    }
+                }
+
+            } catch {
+                await MainActor.run {
+                    self.workoutsForSelectedDate = []
+                    self.exercisesForWorkout = [:]
+                    print("Failed to load workouts with exercises:", error.localizedDescription)
                 }
             }
         }
     }
+
+}
+
+extension WorkoutViewModel {
+
+    func saveTrackedExercises(_ tracked: [ExerciseLibraryItem: [Set]], for workout: Workout) async {
+        guard let workoutId = workout.objectId else { return }
+        let workoutPointer = Pointer<Workout>(objectId: workoutId)
+        
+        do {
+            for exercise in tracked {
+                // Check if an Exercise already exists for this workout & item
+                let query = Exercise.query("workout" == workoutPointer)
+                    .where("exercise" == Pointer<ExerciseLibraryItem>(objectId: exercise.key.objectId!))
+                
+                let existingExercises = try await query.find()
+                
+                if let existing = existingExercises.first {
+                    var updatedExercise = existing
+                    updatedExercise.sets = exercise.value
+                    _ = try await updatedExercise.save()
+                } else {
+                    var newExercise = Exercise()
+                    newExercise.workout = workoutPointer
+                    newExercise.exercise = Pointer<ExerciseLibraryItem>(objectId: exercise.key.objectId!)
+                    newExercise.sets = exercise.value
+                    _ = try await newExercise.save()
+                }
+            }
+        } catch {
+            print("Failed to save tracked exercises:", error)
+        }
+    }
+}
+
     //end edit
 
 

@@ -57,8 +57,12 @@ class AuthenticationViewModel: ObservableObject {
                 switch result {
                 case .success(let user):
                     print("✅ User logged in successfully:", user)
+                    
+                    if !self.isAuthenticated {
+                        self.showSuccessAlert("Welcome back!")
+                    }
                     self.isAuthenticated = true
-                    self.showSuccessAlert("Welcome back!")
+                    
                     
                 case .failure(let error):
                     print("❌ Login failed:", error.message)
@@ -133,6 +137,29 @@ class AuthenticationViewModel: ObservableObject {
             }
         }
     }
+    //edit by robert
+    
+    var firstName: String {
+        let full = fullName.isEmpty ? (User.current?.fullName ?? "") : fullName
+        return full.split(separator: " ").first.map(String.init) ?? "User"
+    }
+
+    
+    func logout() {
+        User.logout { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    print("Logged out")
+                    self.isAuthenticated = false
+                    self.clearFields()
+                case .failure(let error):
+                    print("Logout error:", error)
+                }
+            }
+        }
+    }
+    //edit end
     
     // MARK: - Forgot Password (Real Parse Password Reset)
     func forgotPassword() {

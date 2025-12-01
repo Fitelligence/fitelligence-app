@@ -9,6 +9,10 @@ import SwiftUI
 import ParseSwift
 
 struct CreateWorkoutView: View {
+    
+    var workoutToEdit: Workout? = nil
+    var workoutVM: WorkoutViewModel
+    var selectedDate: Date
     @State private var workoutName: String = ""
     @State private var date: Date = Date()
     @State private var isExercisePickerShowing: Bool = false
@@ -19,7 +23,6 @@ struct CreateWorkoutView: View {
     
     @Environment(\.dismiss) var dismiss
 
-    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading) {
@@ -50,8 +53,11 @@ struct CreateWorkoutView: View {
 
                 ForEach(viewModel.trackedExercises.keys.sorted(by: { $0.name ?? "" < $1.name ?? "" }), id: \.self) { exerciseLibraryItem in
                     ExerciseCardView(exerciseLibraryItem: exerciseLibraryItem, viewModel: viewModel)
+                        .frame(maxWidth: .infinity)
                 }
-                
+
+
+
                 Button(action: {
                     Task(priority: .background) {
                         await viewModel.loadExercises()
@@ -77,19 +83,34 @@ struct CreateWorkoutView: View {
                     Button(action: {
                         Task {
                             guard !workoutName.trimmingCharacters(in: .whitespaces).isEmpty else {
-                                        errorMessage = "Workout name cannot be empty."
-                                        showError = true
-                                        return
-                                    }
-                            try? await viewModel.saveWorkout(name: workoutName, date: date)
-                            workoutName = ""
-                            date = Date()
-                            await MainActor.run {
-                                dismiss()
+                                errorMessage = "Workout name cannot be empty."
+                                showError = true
+                                return
+                            }
+                            
+                            if let workout = workoutToEdit {
+                                // Editing existing workout
+                                var updatedWorkout = workout
+                                updatedWorkout.name = workoutName
+                                updatedWorkout.scheduleDate = date
+                                
+                                do {
+                                    _ = try await updatedWorkout.save()
+                                    await viewModel.saveTrackedExercises(viewModel.trackedExercises, for: updatedWorkout)
+                                    await MainActor.run { dismiss() }
+                                } catch {
+                                    print("Failed to update workout:", error)
+                                }
+                            } else {
+                                // Creating new workout
+                                try? await viewModel.saveWorkout(name: workoutName, date: date)
+                                workoutName = ""
+                                date = Date()
+                                await MainActor.run { dismiss() }
                             }
                         }
                     }) {
-                        Text("Save workout")
+                        Text(workoutToEdit != nil ? "Update Workout" : "Save Workout")
                     }
                     .buttonStyle(.borderedProminent)
                     .padding()
@@ -100,8 +121,6 @@ struct CreateWorkoutView: View {
                         Text(errorMessage)
                     })
                 }
-                
-                
             }
         }
         .padding(.top)
@@ -113,7 +132,32 @@ struct CreateWorkoutView: View {
         }
         .onAppear {
             Task(priority: .background) {
-                await viewModel.loadExercises()
+                await viewModel.loadExercises() // load all possible exercises first
+                
+                guard let workout = workoutToEdit,
+                      let workoutId = workout.objectId else { return }
+                
+                do {
+                    let exercises = try await Exercise.query("workout" == Pointer<Workout>(objectId: workoutId))
+                        .include(["exercise"])
+                        .find()
+                    
+                    var tracked: [ExerciseLibraryItem: [Set]] = [:]
+                    
+                    for exercise in exercises {
+                        if let pointer = exercise.exercise,
+                           let item = try? await pointer.fetch() {
+                            tracked[item] = exercise.sets ?? []
+                        }
+                    }
+                    
+                    // update trackedExercises on main actor
+                    await MainActor.run {
+                        viewModel.trackedExercises = tracked
+                    }
+                } catch {
+                    print("Failed to load exercises for editing:", error)
+                }
             }
         }
     }
@@ -121,7 +165,7 @@ struct CreateWorkoutView: View {
 
 struct ExerciseCategoryPickerView: View {
     @Environment(\.dismissModal) var dismissModal
-    @Bindable var viewModel: WorkoutViewModel
+    var viewModel: WorkoutViewModel
     
     var body: some View {
         NavigationStack {
@@ -162,7 +206,7 @@ struct ExerciseCategoryPickerView: View {
 
 struct ExercisePickerView: View {
     var category: String
-    @Bindable var viewModel: WorkoutViewModel
+    var viewModel: WorkoutViewModel
     
     private var filteredExercises: [ExerciseLibraryItem] {
         viewModel.loadExercises(by: category)
@@ -187,14 +231,10 @@ struct ExercisePickerView: View {
 struct ModalDismissActionKey: EnvironmentKey {
     static let defaultValue: () -> Void = {}
 }
+
 extension EnvironmentValues {
     var dismissModal: () -> Void {
         get { self[ModalDismissActionKey.self] }
         set { self[ModalDismissActionKey.self] = newValue }
     }
-}
-
-
-#Preview {
-    CreateWorkoutView()
 }

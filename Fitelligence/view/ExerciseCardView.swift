@@ -11,8 +11,8 @@ struct ExerciseCardView: View {
                 // Icon
                 Image(systemName: "dumbbell.fill")
                     .font(.system(size: 22))
-                    .padding(10)
-                    .background(Color.black.opacity(0.05))
+                    .padding(8)
+                    .background(Color.gray.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 
                 VStack(alignment: .leading, spacing: 12) {
@@ -49,10 +49,9 @@ struct ExerciseCardView: View {
         }
         .padding()
         .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color.gray.opacity(0.18))
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.gray.opacity(0.1))
         )
-        .padding(.horizontal)
     }
 }
 

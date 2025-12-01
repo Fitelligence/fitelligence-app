@@ -1,4 +1,9 @@
-// Created by Robert Penate on 11/22/25.
+//
+//  CustomCalendarView.swift
+//  Fitelligence
+//
+//  Created by Robert Penate on 11/29/25.
+//
 
 import SwiftUI
 import ParseSwift
@@ -32,8 +37,12 @@ struct WorkoutDetailView: View {
 
                         if let sets = exercise.sets {
                             ForEach(sets) { set in
-                                Text("Set \(set.setNumber): \(set.reps) reps • \(set.weight) lbs")
-                                    .font(.subheadline)
+                                ExerciseCard(
+                                    name: "",
+                                    reps: set.reps,
+                                    sets: set.setNumber,
+                                    weight: Int(set.weight)
+                                )
                             }
                         } else {
                             Text("No sets recorded")
@@ -48,11 +57,22 @@ struct WorkoutDetailView: View {
         .task {
             await loadExercises()
         }.toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItemGroup(placement: .navigationBarTrailing) {
+                // Edit button
+                NavigationLink(destination: CreateWorkoutView(
+                    workoutToEdit: workout,
+                    workoutVM: workoutVM,
+                    selectedDate: selectedDate
+                )) {
+                    Image(systemName: "pencil")
+                }
+
+                // Delete button
                 Button(role: .destructive) {
                     showingDeleteConfirm = true
                 } label: {
                     Image(systemName: "trash")
+                        .foregroundColor(.red)
                 }
             }
         }
